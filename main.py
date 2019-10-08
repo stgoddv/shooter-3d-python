@@ -164,7 +164,7 @@ def timeChanged():
                     bound = 0.008
                     if math.acos(p[0][1]) < bound: boundary = True
                     if math.acos(p[1][1]) < bound: boundary = True
-                    if math.acos(p[2][1]) < bound: boundary = True
+                    # if math.acos(p[2][1]) < bound: boundary = True
 
         # Calculate distance to ceiling and floor
         n_ceiling = (nScreenHeight / 2.) - nScreenHeight / distance_2_wall
@@ -191,6 +191,12 @@ def timeChanged():
                 elif b < 0.9: n_shade_floor = '-'
                 else: n_shade_floor = ' '
                 screen[y * nScreenWidth + x] = n_shade_floor
+
+    if k_down and 39 in k_code:
+        for nx in range(n_map_width):
+            for ny in range(n_map_width):
+                screen[(ny + 1) * nScreenWidth + nx] = map[ny * n_map_width + nx]
+        screen[(int(player_y) + 1) * nScreenWidth + int(player_x)] = 'P'
 
     draw_screen(C, screen, nScreenWidth, args=theme)
     C.pack()
