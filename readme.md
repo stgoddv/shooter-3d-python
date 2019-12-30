@@ -8,13 +8,6 @@ Tkinter is Python's de facto standard GUI. Is included with standard Linux, Wind
 
 ![Game Walkthrough](https://github.com/stgoddv/shooter-3d-python/blob/master/static/Walkthrough.gif?raw=true)
 
-# Table of Contents
-
-1. [Example](#example)
-2. [Example2](#example2)
-3. [Third Example](#third-example)
-4. [Fourth Example](#fourth-examplehttpwwwfourthexamplecom)
-
 ### Controls
 
 | key         | description           |
