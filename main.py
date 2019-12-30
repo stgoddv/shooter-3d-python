@@ -3,7 +3,6 @@ import time
 import math
 import tkinter
 from tkinter import Label
-from tkinter import ttk
 
 def Screen2Text(screen, nScreenWidth):
     screen = ''.join(screen)
@@ -12,7 +11,8 @@ def Screen2Text(screen, nScreenWidth):
 def draw_text(Canvas, text, px_x, px_y, args = None):
     l = Label(Canvas, text=text, **args) if args else Label(Canvas, text=text)
     l.place(x=px_x, y=px_y, anchor='nw')
-    # l.config(font=('TkFixedFont',6))
+    # Activate this to have a psycho experience:
+    # l.config(font=('TkFixedFont',8))
     l.config(font='TkFixedFont')
 
 def draw_screen(Canvas, screen, nScreenWidth, args = None):
@@ -46,53 +46,8 @@ def k_up_e(e):
     k_code.remove(e.keycode)
     k_down -= 1
 
-top = tkinter.Tk()
-top.bind('<KeyPress>', k_down_e)
-top.bind('<KeyRelease>', k_up_e)
-
-top.title('First Person Shooter 3D')
-C = tkinter.Canvas(top, bg="white", height=HEIGHT, width=WIDTH)
-theme = {'fg':'white', 'bg':'black'}
-
-player_x = 8.
-player_y = 8.
-player_a = 0.
-n_map_width = 16
-n_map_height = 16
-map = ''
-
-map += "################"
-map += "#..............#"
-map += "#..............#"
-map += "#..#...........#"
-map += "#..#####.......#"
-map += "#..#...........#"
-map += "#..#...........#"
-map += "#..............#"
-map += "#..............#"
-map += "#.........######"
-map += "#..............#"
-map += "#..............#"
-map += "#..............#"
-map += "#..............#"
-map += "#..............#"
-map += "################"
-
-fov = 3.14159 / 4.
-f_depth = 16.
-
-tp1 = time.time()
-tp2 = time.time()
-
-elapsed = 0
-def timeChanged():
-    global elapsed, theme, nScreenWidth, fov, f_depth, k_down, k_code, player_a, player_x, player_y
-    global tp1, tp2
-    C.delete("all")
-
-    tp2 = time.time()
-    elapsed_time = tp2 - tp1
-    tp1 = tp2
+def compute_player_movements(elapsed_time):
+    global k_down, k_code, player_a, player_x, player_y
 
     # Rotate
     if k_down and 113 in k_code: player_a -= 1. * elapsed_time
@@ -126,9 +81,69 @@ def timeChanged():
             player_x += -math.cos(player_a) * 1. * elapsed_time
             player_y += math.sin(player_a) * 1. * elapsed_time
 
+# Canvas instantiation
+top = tkinter.Tk()
+
+# Event binding
+top.bind('<KeyPress>', k_down_e)
+top.bind('<KeyRelease>', k_up_e)
+
+top.title('First Person Shooter 3D')
+C = tkinter.Canvas(top, bg="white", height=HEIGHT, width=WIDTH)
+theme = {'fg':'white', 'bg':'black'}
+
+# Global variables initialization
+player_x = 8.
+player_y = 8.
+player_a = 0.
+n_map_width = 16
+n_map_height = 16
+
+# Map definition
+map = ''
+map += "################"
+map += "#..............#"
+map += "#..............#"
+map += "#..#...........#"
+map += "#..#####.......#"
+map += "#..#...........#"
+map += "#..#...........#"
+map += "#..............#"
+map += "#..............#"
+map += "#.........######"
+map += "#..............#"
+map += "#..............#"
+map += "#..............#"
+map += "#..............#"
+map += "#..............#"
+map += "################"
+
+# Rays parameters initialization
+fov = 3.14159 / 4.
+f_depth = 16.
+
+# Time initialization
+tp1 = time.time()
+tp2 = time.time()
+elapsed = 0
+
+def timeChanged():
+    global elapsed, theme, nScreenWidth, fov, f_depth, k_down, k_code, player_a, player_x, player_y
+    global tp1, tp2
+    C.delete("all")
+
+    # Calculate elapsed time between frames
+    tp2 = time.time()
+    elapsed_time = tp2 - tp1
+    tp1 = tp2
+
+    # Execute player movements from keyboard pressings
+    compute_player_movements(elapsed_time)
+
     for x in range(nScreenWidth):
         ray_angle = (player_a - fov / 2.) + (x / nScreenWidth) * fov
 
+        # Distance initialization
         distance_2_wall = 0
         hit_wall = False
         boundary = False
@@ -136,6 +151,7 @@ def timeChanged():
         eye_x = math.sin(ray_angle)
         eye_y = math.cos(ray_angle)
 
+        # To get the distance to a wall throw a ray until it collides
         while not hit_wall and distance_2_wall < f_depth:
             distance_2_wall += 0.5
 
@@ -164,26 +180,32 @@ def timeChanged():
                     bound = 0.008
                     if math.acos(p[0][1]) < bound: boundary = True
                     if math.acos(p[1][1]) < bound: boundary = True
-                    # if math.acos(p[2][1]) < bound: boundary = True
 
         # Calculate distance to ceiling and floor
         n_ceiling = (nScreenHeight / 2.) - nScreenHeight / distance_2_wall
         n_floor = nScreenHeight - n_ceiling
 
+        # Paint wall shade depending of distance
         if (distance_2_wall <= f_depth / 4.): n_shade = u"\u2588"
         elif (distance_2_wall <= f_depth / 3.): n_shade = u"\u2593"
         elif (distance_2_wall <= f_depth / 2.): n_shade = u"\u2592"
         elif (distance_2_wall <= f_depth): n_shade = u"\u2591"
         else: n_shade = ' '
 
+        # Wall corners doesnt have any shade
         if boundary: n_shade = ' '
 
+        # For each horizontal position iterate through vertical positions
+        # y starts in the top of the screen and grows towards the bottom
         for y in range(nScreenHeight):
             if (y < n_ceiling):
+                # Sky
                 screen[y * nScreenWidth + x] = ' '
             elif (y > n_ceiling and y <= n_floor):
+                # Walls
                 screen[y * nScreenWidth + x] = n_shade
             else:
+                # Floor
                 b = 1. - (y - nScreenHeight / 2.) / (nScreenHeight / 2.)
                 if b < 0.25: n_shade_floor = '#'
                 elif b < 0.5: n_shade_floor = 'x'
@@ -192,6 +214,7 @@ def timeChanged():
                 else: n_shade_floor = ' '
                 screen[y * nScreenWidth + x] = n_shade_floor
 
+    # Show map with 's' key
     if k_down and 39 in k_code:
         for nx in range(n_map_width):
             for ny in range(n_map_width):
